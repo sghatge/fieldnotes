@@ -11,11 +11,15 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.graphics.Color
 import android.view.View
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.WindowInsets
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.widget.FrameLayout
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.google.mlkit.vision.common.InputImage
@@ -37,7 +41,23 @@ class MainActivity : Activity() {
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                // The shared web app links to website pages (tool details, privacy, catalogue)
+                // that aren't bundled in the APK. Open those on the website in the browser.
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val url = request?.url ?: return false
+                    if (url.scheme == "file" && url.path?.startsWith(APP_PAGE) == true) return false
+                    val target = if (url.scheme == "file") {
+                        Uri.parse(SITE_URL + url.path.orEmpty().removePrefix(ASSET_ROOT))
+                    } else url
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, target))
+                    } catch (_: Exception) {
+                        deliverOcrError("No browser is available to open ${target}.")
+                    }
+                    return true
+                }
+            }
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(
                     view: WebView?, callback: ValueCallback<Array<Uri>>?, params: FileChooserParams?
@@ -56,9 +76,14 @@ class MainActivity : Activity() {
             addJavascriptInterface(bridge, "AndroidBridge")
             addJavascriptInterface(bridge, "AndroidShare")
         }
-        keepClearOfSystemBars(web)
-        setContentView(web)
-        web.loadUrl("file:///android_asset/www/index.html")
+        // WebView ignores its own padding when drawing, so the insets go on a wrapper.
+        val container = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#F7F8F4"))
+            addView(web, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        }
+        keepClearOfSystemBars(container)
+        setContentView(container)
+        web.loadUrl("file://$APP_PAGE")
     }
 
     /**
@@ -278,5 +303,9 @@ class MainActivity : Activity() {
         private const val AUDIO_REQUEST = 82
         private const val SAVE_REQUEST = 83
         private const val SPEECH_LANGUAGE = "en-IN"
+        private const val ASSET_ROOT = "/android_asset"
+        private const val APP_PAGE = "$ASSET_ROOT/www/index.html"
+        // Public site that hosts the pages the web app links to (../privacy/, ../voicetask/, …).
+        private const val SITE_URL = "https://fieldnotes-henna.vercel.app"
     }
 }

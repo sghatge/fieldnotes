@@ -23,22 +23,35 @@
     [/Dictation uses your browser’s speech service, not an on-device model, and needs a connection\./,
       'Dictation uses Android’s on-device speech service where the phone supports it; language support varies.'],
   ];
+  // Order matters: specific sentences first, then the generic "this browser" fallbacks.
   const TEXT_REWRITES = [
     [/The photo is not read or uploaded in this preview · type the values below/,
       'Bundled on-device OCR · the photo never leaves this phone · review every value'],
-    [/\bin this browser\b/g, 'on this phone'],
-    [/\bthis browser\b/g, 'this phone'],
+    [/Mic uses your browser’s speech service \(Google in Chrome, Microsoft in Edge\)\. Type instead to keep everything on this device\./,
+      'Mic uses Android’s on-device speech service; audio stays on this phone.'],
+    [/your browser’s speech service/g, 'Android’s on-device speech service'],
+    [/SAVED IN THIS BROWSER/g, 'SAVED ON THIS PHONE'],
+    [/\bin this browser\b/gi, 'on this phone'],
+    [/\bthis browser\b/gi, 'this phone'],
   ];
+  const rewriteText = (text) =>
+    TEXT_REWRITES.reduce((out, [pattern, replacement]) => out.replace(pattern, replacement), text);
+
   function rewriteCopy(root) {
     root.querySelectorAll('.notice').forEach((notice) => {
       NOTICE_REWRITES.forEach(([pattern, text]) => {
         if (pattern.test(notice.innerHTML)) notice.innerHTML = notice.innerHTML.replace(pattern, text);
       });
     });
+    root.querySelectorAll('[title],[placeholder]').forEach((el) => {
+      ['title', 'placeholder'].forEach((attr) => {
+        const value = el.getAttribute(attr);
+        if (value && rewriteText(value) !== value) el.setAttribute(attr, rewriteText(value));
+      });
+    });
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      let text = node.nodeValue;
-      TEXT_REWRITES.forEach(([pattern, replacement]) => { text = text.replace(pattern, replacement); });
+      const text = rewriteText(node.nodeValue);
       if (text !== node.nodeValue) node.nodeValue = text;
     }
   }
@@ -178,7 +191,8 @@
         checklist.after(box);
       }
     }
-    rewriteCopy(document.getElementById('app'));
+    // Whole body, so pop-up toasts (appended outside #app) are covered too.
+    rewriteCopy(document.body);
   }
 
   // The shared app re-renders #app on every navigation; re-apply Android tweaks each time.
@@ -187,6 +201,6 @@
     if (pending) return;
     pending = true;
     queueMicrotask(() => { pending = false; enhanceCurrentPage(); });
-  }).observe(document.getElementById('app'), { childList: true, subtree: true });
+  }).observe(document.body, { childList: true, subtree: true });
   enhanceCurrentPage();
 })();
