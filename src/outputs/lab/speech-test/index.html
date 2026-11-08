@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex">
 <link rel="icon" href="../../icon.svg">
 <link rel="stylesheet" href="../../styles.css">
-<title>Speech test lab | Fieldnotes</title>
+<title>Speech test lab | PuneStack Tools</title>
 <style>
 .lab{display:grid;gap:16px}
 .step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
@@ -38,11 +38,11 @@ table.runs th{font-weight:600;color:#3e4d42;border-top:0}
 </head>
 <body>
 <header class="top"><div class="wrap">
-<a class="brand" href="../../"><span class="brand-mark">f.</span>fieldnotes</a>
+<a class="brand" href="../../"><span class="brand-mark">P</span>PuneStack Tools</a>
 <nav><a href="../../voicetask/">VoiceTask</a><a href="../../privacy/">Privacy</a></nav>
 </div></header>
 <section class="hero"><div class="wrap">
-<div class="crumbs"><a href="../../">Fieldnotes</a> / Lab / Speech test</div>
+<div class="crumbs"><a href="../../">PuneStack Tools</a> / Lab / Speech test</div>
 <h1>On-device speech test</h1>
 <p>A test bench, not a product. It checks whether a small Whisper model can turn spoken tasks into text on a real phone, fast enough and without a network.</p>
 </div></section>
@@ -125,7 +125,7 @@ table.runs th{font-weight:600;color:#3e4d42;border-top:0}
 </div>
 
 </div></main>
-<footer><div class="wrap"><span>Fieldnotes lab. For testing only.</span><span><a href="../../privacy/">Privacy</a></span></div></footer>
+<footer><div class="wrap"><span>PuneStack Tools lab. For testing only.</span><span><a href="../../privacy/">Privacy</a></span></div></footer>
 
 <script type="module">
 const LIB='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/dist/transformers.min.js';
@@ -218,7 +218,7 @@ $('copy').onclick=async()=>{
   const r=runs(),withText=$('with-text').checked,bEnd=await battery();
   const ok=r.filter(x=>x.verdict==='correct').length,part=r.filter(x=>x.verdict==='partly').length;
   const avg=k=>r.length?(r.reduce((s,x)=>s+x[k],0)/r.length).toFixed(2):'-';
-  const lines=['Fieldnotes speech test: evidence note','Date: '+new Date().toLocaleString('en-IN'),'Browser: '+navigator.userAgent,'CPU cores: '+(navigator.hardwareConcurrency||'?')+' · Device memory: '+(navigator.deviceMemory?navigator.deviceMemory+' GB':'?')+' · Multi-threaded: '+(self.crossOriginIsolated?'yes':'no'),
+  const lines=['PuneStack Tools speech test: evidence note','Date: '+new Date().toLocaleString('en-IN'),'Browser: '+navigator.userAgent,'CPU cores: '+(navigator.hardwareConcurrency||'?')+' · Device memory: '+(navigator.deviceMemory?navigator.deviceMemory+' GB':'?')+' · Multi-threaded: '+(self.crossOriginIsolated?'yes':'no'),
     'Model: '+(state.model||'-')+' ('+(state.dtype||'-')+') · Download: '+fmtMB(state.bytes)+' · Last load: '+(state.loadMs?fmtS(state.loadMs):'-'),
     'Battery: '+(state.batteryStart!=null?state.batteryStart+'%':'?')+' → '+(bEnd!=null?bEnd+'%':'?'),
     'Runs: '+r.length+' · Correct: '+ok+' · Partly: '+part+' · Wrong: '+(r.length-ok-part)+' · Offline runs: '+r.filter(x=>x.offline).length,
