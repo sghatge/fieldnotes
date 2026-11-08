@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10271e">
 <meta name="robots" content="noindex">
-<meta name="description" content="Where Fieldnotes data goes, in plain language.">
+<meta name="description" content="Where PuneStack Tools data goes, in plain language.">
 <link rel="icon" href="../icon.svg">
 <link rel="stylesheet" href="../styles.css">
-<title>Privacy | Fieldnotes</title>
+<title>Privacy | PuneStack Tools</title>
 </head>
 <body>
 <header class="top"><div class="wrap">
-<a class="brand" href="../"><span class="brand-mark">f.</span>fieldnotes</a>
-<nav><a href="../#tools">Tools</a><a href="../privacy/">Privacy</a><a href="../app/">Open preview</a></nav>
+<a class="brand" href="../"><span class="brand-mark">P</span>PuneStack Tools</a>
+<nav><a href="../#tools">Tools</a><a class="hide-sm" href="../privacy/">Privacy</a><a class="hide-sm" href="https://punestack.vercel.app/">PuneStack</a><a href="../app/">Open app</a></nav>
 </div></header>
 <section class="hero"><div class="wrap">
-<div class="crumbs"><a href="../">Fieldnotes</a> / Privacy</div>
+<div class="crumbs"><a href="../">PuneStack Tools</a> / Privacy</div>
 <h1>Where your data goes</h1>
 <p>Plain answers, checked against the code. Last reviewed 8 November 2026.</p>
 </div></section>
 <main><div class="wrap">
 <section><h2>The short version</h2>
 <ul class="check" style="max-width:720px">
-<li>No account, no sign-in, and no Fieldnotes server that receives what you enter.</li>
+<li>No account, no sign-in, and no PuneStack server that receives what you enter.</li>
 <li>Your entries are saved in this browser’s local storage on this device. Clearing your browser data deletes them.</li>
 <li>No analytics, advertising or tracking scripts.</li>
 </ul></section>
@@ -34,20 +34,20 @@
 <tr><td>Loading the website</td><td>Our host, Vercel, receives standard request details (such as your IP address and browser) to deliver the pages.</td></tr>
 <tr><td>Speech test lab page</td><td>Downloads a speech model from Hugging Face and code from jsDelivr once, then runs on your device. Your audio is not uploaded. This page is only for testing.</td></tr>
 </tbody></table></section>
-<section><h2>Delete your Fieldnotes data</h2>
-<p class="lead">Removes every task, recap, expense, audit and brief that Fieldnotes saved in this browser. This cannot be undone.</p>
-<button class="btn secondary" id="wipe" type="button">Delete my Fieldnotes data in this browser</button>
+<section><h2>Delete your PuneStack Tools data</h2>
+<p class="lead">Removes every task, recap, expense, audit and brief that PuneStack Tools saved in this browser. This cannot be undone.</p>
+<button class="btn secondary" id="wipe" type="button">Delete my PuneStack Tools data in this browser</button>
 <p id="wipe-msg" role="status" style="font-size:14px;color:var(--muted)"></p>
 </section>
 </div></main>
 <script>
 document.getElementById('wipe').addEventListener('click',function(){
   var b=this,msg=document.getElementById('wipe-msg');
-  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Tap again to confirm';msg.textContent='This removes all Fieldnotes entries from this browser.';return}
+  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Tap again to confirm';msg.textContent='This removes all PuneStack Tools entries from this browser.';return}
   var n=0;try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('fieldnotes_')===0){localStorage.removeItem(k);n++}})}catch(err){}
-  b.dataset.armed='';b.textContent='Delete my Fieldnotes data in this browser';msg.textContent=n?('Deleted '+n+' saved item group'+(n===1?'':'s')+'.'):'Nothing was stored in this browser.';
+  b.dataset.armed='';b.textContent='Delete my PuneStack Tools data in this browser';msg.textContent=n?('Deleted '+n+' saved item group'+(n===1?'':'s')+'.'):'Nothing was stored in this browser.';
 });
 </script>
-<footer><div class="wrap"><span>Fieldnotes: focused tools for small businesses. All tools are previews and none are for sale yet.</span><span><a href="../privacy/">Privacy</a></span></div></footer>
+<footer><div class="wrap"><span>PuneStack Tools: focused tools for small businesses, part of <a href="https://punestack.vercel.app/">PuneStack</a>. All tools are previews and none are for sale yet.</span><span><a href="../privacy/">Privacy</a></span></div></footer>
 </body>
 </html>

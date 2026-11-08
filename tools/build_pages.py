@@ -30,7 +30,7 @@ PRODUCTS = [
             "No sync between phones; tasks live in one browser",
         ],
         "flow": [
-            ("Typed task", "Stays in this browser (local storage). Fieldnotes never receives it."),
+            ("Typed task", "Stays in this browser (local storage). PuneStack never receives it."),
             ("Dictated task", "Your browser’s speech service turns audio into text. In Chrome and Edge that means Google or Microsoft receives the audio."),
             ("Shared list", "Only when you tap Share, and only to the app you pick."),
         ],
@@ -53,7 +53,7 @@ PRODUCTS = [
             "No CRM integration",
         ],
         "flow": [
-            ("Typed notes and recaps", "Stay in this browser. Fieldnotes never receives them."),
+            ("Typed notes and recaps", "Stay in this browser. PuneStack never receives them."),
             ("Dictated notes", "Your browser’s speech service receives the audio (Google in Chrome, Microsoft in Edge)."),
         ],
         "price": "Not for sale. This is an early preview to gather feedback.",
@@ -75,7 +75,7 @@ PRODUCTS = [
             "Not a GST return or accounting system. Your CA must review every entry",
         ],
         "flow": [
-            ("Expenses you enter", "Stay in this browser. Fieldnotes never receives them."),
+            ("Expenses you enter", "Stay in this browser. PuneStack never receives them."),
             ("Receipt photo", "Only its file name is shown; the image is not read, stored or uploaded in this preview."),
             ("CSV export", "Saved by your browser to your device."),
         ],
@@ -99,7 +99,7 @@ PRODUCTS = [
             "No on-device speech model. Dictation needs your browser’s speech service and a connection",
         ],
         "flow": [
-            ("Checks and findings", "Stay in this browser. Fieldnotes never receives them."),
+            ("Checks and findings", "Stay in this browser. PuneStack never receives them."),
             ("Dictated findings", "Your browser’s speech service receives the audio (Google in Chrome, Microsoft in Edge)."),
         ],
         "price": "Not for sale. This is an early preview to gather feedback.",
@@ -121,7 +121,7 @@ PRODUCTS = [
             "No reading of photos or PDFs (OCR); paste text only",
         ],
         "flow": [
-            ("Pasted text and briefs", "Stay in this browser. Fieldnotes never receives them."),
+            ("Pasted text and briefs", "Stay in this browser. PuneStack never receives them."),
         ],
         "price": "Not for sale. Have a qualified lawyer review documents before signing.",
         "pilot": False,
@@ -147,11 +147,11 @@ def page(title, desc, body, depth):
 </head>
 <body>
 <header class="top"><div class="wrap">
-<a class="brand" href="{up}"><span class="brand-mark">f.</span>fieldnotes</a>
-<nav><a href="{up}#tools">Tools</a><a href="{up}privacy/">Privacy</a><a href="{up}app/">Open preview</a></nav>
+<a class="brand" href="{up}"><span class="brand-mark">P</span>PuneStack Tools</a>
+<nav><a href="{up}#tools">Tools</a><a class="hide-sm" href="{up}privacy/">Privacy</a><a class="hide-sm" href="https://punestack.vercel.app/">PuneStack</a><a href="{up}app/">Open app</a></nav>
 </div></header>
 {body}
-<footer><div class="wrap"><span>Fieldnotes: focused tools for small businesses. All tools are previews and none are for sale yet.</span><span><a href="{up}privacy/">Privacy</a></span></div></footer>
+<footer><div class="wrap"><span>PuneStack Tools: focused tools for small businesses, part of <a href="https://punestack.vercel.app/">PuneStack</a>. All tools are previews and none are for sale yet.</span><span><a href="{up}privacy/">Privacy</a></span></div></footer>
 </body>
 </html>
 """
@@ -171,7 +171,7 @@ def product_page(p):
     if p["pilot"]:
         cta += pilot_cta(p["name"])
     body = f"""<section class="hero"><div class="wrap">
-<div class="crumbs"><a href="../">Fieldnotes</a> / {e(p['name'])}</div>
+<div class="crumbs"><a href="../">PuneStack Tools</a> / {e(p['name'])}</div>
 <span class="status {cls}">{e(label)}</span>
 <h1>{e(p['name'])}: {e(p['line'])}</h1>
 <p>{e(p['who'])}</p>
@@ -183,12 +183,12 @@ def product_page(p):
 <div class="box"><h3>What works in the preview today</h3><ul class="check">{works}</ul></div>
 <div class="box"><h3>Not built yet</h3><ul class="cross">{missing}</ul></div>
 </div></section>
-<section><h2>Where your data goes</h2><p class="lead">No account and no Fieldnotes server. Here is exactly what happens to what you enter.</p>
+<section><h2>Where your data goes</h2><p class="lead">No account and no PuneStack server. Here is exactly what happens to what you enter.</p>
 <table class="flow"><thead><tr><th>What</th><th>Where it goes</th></tr></thead><tbody>{rows}</tbody></table>
 <p style="margin-top:12px;font-size:14px"><a href="../privacy/">Full privacy details</a></p></section>
 <section><h2>Price</h2><p class="lead">{e(p['price'])}</p></section>
 </div></main>"""
-    return page(f"{p['name']}: {p['line']} | Fieldnotes", f"{p['name']}: {p['line']} Early preview.", body, 1)
+    return page(f"{p['name']}: {p['line']} | PuneStack Tools", f"{p['name']}: {p['line']} Early preview.", body, 1)
 
 def home():
     cards = []
@@ -201,13 +201,13 @@ def home():
 <h3 style="margin-top:10px">MinuteBox</h3><p>Meeting minutes and action items, written in your browser. The first tool built this way, and the proof that the approach works.</p></div>
 <div class="links" style="margin:0;padding:0"><a class="btn" href="https://minutebox.vercel.app" rel="noopener">Open MinuteBox</a></div></article>"""
     body = f"""<section class="hero"><div class="wrap">
-<div class="eyebrow">Fieldnotes · early previews</div>
+<div class="eyebrow">PuneStack Tools · early previews</div>
 <h1>Small tools that each do one back-office job, and keep your work on your phone.</h1>
 <p>Focused tools for Indian small businesses. Each one solves a single job, works without an account, and tells you plainly where your data goes.</p>
 <div class="pillars">
 <div class="pillar"><b>One job per tool</b><span>Not a do-everything assistant. Install only what you need.</span></div>
 <div class="pillar"><b>Works on weak networks</b><span>Typed entries keep working offline after your first visit.</span></div>
-<div class="pillar"><b>Privacy you can check</b><span>No account and no Fieldnotes server. Voice input is the exception, and we say so.</span></div>
+<div class="pillar"><b>Privacy you can check</b><span>No account and no PuneStack server. Voice input is the exception, and we say so.</span></div>
 </div>
 </div></section>
 <main><div class="wrap">
@@ -220,18 +220,18 @@ def home():
 // Old links pointed at the workspace with a hash (e.g. /#task). Send those to the app.
 (function(){{var k=location.hash.slice(1);if(['task','call','expense','audit','paper'].indexOf(k)>-1)location.replace('app/#'+k)}})();
 </script>"""
-    return page("Fieldnotes: focused tools for small businesses", "Focused, privacy-first tools for small businesses. Early previews.", body, 0)
+    return page("PuneStack Tools: focused tools for small businesses", "Focused, privacy-first tools for small businesses. Early previews.", body, 0)
 
 def privacy():
     body = """<section class="hero"><div class="wrap">
-<div class="crumbs"><a href="../">Fieldnotes</a> / Privacy</div>
+<div class="crumbs"><a href="../">PuneStack Tools</a> / Privacy</div>
 <h1>Where your data goes</h1>
 <p>Plain answers, checked against the code. Last reviewed 8 November 2026.</p>
 </div></section>
 <main><div class="wrap">
 <section><h2>The short version</h2>
 <ul class="check" style="max-width:720px">
-<li>No account, no sign-in, and no Fieldnotes server that receives what you enter.</li>
+<li>No account, no sign-in, and no PuneStack server that receives what you enter.</li>
 <li>Your entries are saved in this browser’s local storage on this device. Clearing your browser data deletes them.</li>
 <li>No analytics, advertising or tracking scripts.</li>
 </ul></section>
@@ -242,21 +242,21 @@ def privacy():
 <tr><td>Loading the website</td><td>Our host, Vercel, receives standard request details (such as your IP address and browser) to deliver the pages.</td></tr>
 <tr><td>Speech test lab page</td><td>Downloads a speech model from Hugging Face and code from jsDelivr once, then runs on your device. Your audio is not uploaded. This page is only for testing.</td></tr>
 </tbody></table></section>
-<section><h2>Delete your Fieldnotes data</h2>
-<p class="lead">Removes every task, recap, expense, audit and brief that Fieldnotes saved in this browser. This cannot be undone.</p>
-<button class="btn secondary" id="wipe" type="button">Delete my Fieldnotes data in this browser</button>
+<section><h2>Delete your PuneStack Tools data</h2>
+<p class="lead">Removes every task, recap, expense, audit and brief that PuneStack Tools saved in this browser. This cannot be undone.</p>
+<button class="btn secondary" id="wipe" type="button">Delete my PuneStack Tools data in this browser</button>
 <p id="wipe-msg" role="status" style="font-size:14px;color:var(--muted)"></p>
 </section>
 </div></main>
 <script>
 document.getElementById('wipe').addEventListener('click',function(){
   var b=this,msg=document.getElementById('wipe-msg');
-  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Tap again to confirm';msg.textContent='This removes all Fieldnotes entries from this browser.';return}
+  if(b.dataset.armed!=='1'){b.dataset.armed='1';b.textContent='Tap again to confirm';msg.textContent='This removes all PuneStack Tools entries from this browser.';return}
   var n=0;try{Object.keys(localStorage).forEach(function(k){if(k.indexOf('fieldnotes_')===0){localStorage.removeItem(k);n++}})}catch(err){}
-  b.dataset.armed='';b.textContent='Delete my Fieldnotes data in this browser';msg.textContent=n?('Deleted '+n+' saved item group'+(n===1?'':'s')+'.'):'Nothing was stored in this browser.';
+  b.dataset.armed='';b.textContent='Delete my PuneStack Tools data in this browser';msg.textContent=n?('Deleted '+n+' saved item group'+(n===1?'':'s')+'.'):'Nothing was stored in this browser.';
 });
 </script>"""
-    return page("Privacy | Fieldnotes", "Where Fieldnotes data goes, in plain language.", body, 1)
+    return page("Privacy | PuneStack Tools", "Where PuneStack Tools data goes, in plain language.", body, 1)
 
 (OUT / "index.html").write_text(home())
 (OUT / "privacy" / "index.html").write_text(privacy())

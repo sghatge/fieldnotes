@@ -1,7 +1,7 @@
-// Fieldnotes service worker v3.
+// PuneStack Tools (Fieldnotes) service worker v4. Bump CACHE whenever app.js or styles.css change.
 // Pages: network first, so updates show; falls back to cache when offline.
 // Static assets: cache first. jsDelivr (speech test lab only): cached on first use so the lab works offline.
-const CACHE='fieldnotes-v3',CDN_CACHE='fieldnotes-lab-cdn-v1';
+const CACHE='fieldnotes-v4',CDN_CACHE='fieldnotes-lab-cdn-v1';
 const PRECACHE=['/','/styles.css','/icon.svg','/manifest.webmanifest','/app/','/app/app.js','/privacy/','/voicetask/','/callrecap/','/expenselens/','/fieldaudit/','/paperbrief/','/lab/speech-test/'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE&&k!==CDN_CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
