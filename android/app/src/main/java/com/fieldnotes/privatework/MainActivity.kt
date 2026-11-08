@@ -11,9 +11,15 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.graphics.Color
+import android.view.View
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.WindowInsets
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
+import android.widget.FrameLayout
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.google.mlkit.vision.common.InputImage
@@ -26,13 +32,32 @@ class MainActivity : Activity() {
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var speechTarget: String? = null
     private var recognizer: SpeechRecognizer? = null
+    private var pendingSave: PendingSave? = null
+
+    private class PendingSave(val name: String, val content: String)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                // The shared web app links to website pages (tool details, privacy, catalogue)
+                // that aren't bundled in the APK. Open those on the website in the browser.
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val url = request?.url ?: return false
+                    if (url.scheme == "file" && url.path?.startsWith(APP_PAGE) == true) return false
+                    val target = if (url.scheme == "file") {
+                        Uri.parse(SITE_URL + url.path.orEmpty().removePrefix(ASSET_ROOT))
+                    } else url
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, target))
+                    } catch (_: Exception) {
+                        deliverOcrError("No browser is available to open ${target}.")
+                    }
+                    return true
+                }
+            }
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(
                     view: WebView?, callback: ValueCallback<Array<Uri>>?, params: FileChooserParams?
@@ -51,8 +76,29 @@ class MainActivity : Activity() {
             addJavascriptInterface(bridge, "AndroidBridge")
             addJavascriptInterface(bridge, "AndroidShare")
         }
-        setContentView(web)
-        web.loadUrl("file:///android_asset/www/index.html")
+        // WebView ignores its own padding when drawing, so the insets go on a wrapper.
+        val container = FrameLayout(this).apply {
+            setBackgroundColor(Color.parseColor("#F7F8F4"))
+            addView(web, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        }
+        keepClearOfSystemBars(container)
+        setContentView(container)
+        web.loadUrl("file://$APP_PAGE")
+    }
+
+    /**
+     * Android 15 (targetSdk 35) draws apps edge-to-edge. Without this the header sits under
+     * the status bar, the tab bar sits under the gesture bar, and the keyboard covers inputs.
+     */
+    private fun keepClearOfSystemBars(view: View) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        view.setOnApplyWindowInsetsListener { v, insets ->
+            val bars = insets.getInsets(
+                WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout() or WindowInsets.Type.ime()
+            )
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            WindowInsets.CONSUMED
+        }
     }
 
     inner class NativeBridge {
@@ -62,12 +108,14 @@ class MainActivity : Activity() {
                 try {
                     val bytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT)
                     val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                        ?: return@runOnUiThread deliverOcrError("Could not read that image. Try another receipt photo.")
+                    if (bitmap == null) {
+                        deliverOcrError("Could not read that image. Try another receipt photo.")
+                        return@runOnUiThread
+                    }
                     val client = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
                     client.process(InputImage.fromBitmap(bitmap, 0))
                         .addOnSuccessListener { result ->
-                            val recognized = result.text
-                            deliverOcrResult(recognized)
+                            deliverOcrResult(result.text)
                             client.close()
                             bitmap.recycle()
                         }
@@ -86,13 +134,17 @@ class MainActivity : Activity() {
         fun startOnDeviceSpeech(target: String) {
             runOnUiThread {
                 speechTarget = target
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !SpeechRecognizer.isOnDeviceRecognitionAvailable(this@MainActivity)) {
-                    deliverSpeechError("This phone does not offer an on-device speech recognizer. Type instead; no network speech fallback is used.")
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                    !SpeechRecognizer.isOnDeviceRecognitionAvailable(this@MainActivity)
+                ) {
+                    deliverSpeechError("This phone does not offer on-device dictation. Please type instead; Fieldnotes never sends audio to a server.")
                     return@runOnUiThread
                 }
                 if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), AUDIO_REQUEST)
-                } else startSpeechRecognition()
+                } else {
+                    startSpeechRecognition()
+                }
             }
         }
 
@@ -106,6 +158,26 @@ class MainActivity : Activity() {
                 startActivity(Intent.createChooser(intent, "Share from Fieldnotes"))
             }
         }
+
+        /** WebView ignores `<a download>`; let the user pick where the file goes instead. */
+        @JavascriptInterface
+        fun saveFile(name: String, mimeType: String, content: String) {
+            runOnUiThread {
+                pendingSave = PendingSave(name, content)
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = mimeType.ifBlank { "text/plain" }
+                    putExtra(Intent.EXTRA_TITLE, name)
+                }
+                startActivityForResult(intent, SAVE_REQUEST)
+            }
+        }
+    }
+
+    private fun speechIntent() = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        putExtra(RecognizerIntent.EXTRA_LANGUAGE, SPEECH_LANGUAGE)
+        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
     }
 
     private fun startSpeechRecognition() {
@@ -120,44 +192,89 @@ class MainActivity : Activity() {
                     override fun onEndOfSpeech() = Unit
                     override fun onPartialResults(partialResults: Bundle?) = Unit
                     override fun onEvent(eventType: Int, params: Bundle?) = Unit
-                    override fun onError(error: Int) = deliverSpeechError("On-device dictation stopped or was unavailable. Type instead.")
+                    override fun onError(error: Int) = handleSpeechError(error)
                     override fun onResults(results: Bundle?) {
-                        val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
-                        if (text.isBlank()) deliverSpeechError("No speech was recognized. Try again or type instead.")
+                        val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                            ?.firstOrNull().orEmpty()
+                        if (text.isBlank()) deliverSpeechError("No speech was recognised. Try again or type instead.")
                         else deliverSpeechResult(speechTarget.orEmpty(), text)
                     }
                 })
-                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-IN")
-                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-                }
-                startListening(intent)
+                startListening(speechIntent())
             }
         } catch (_: Exception) {
-            deliverSpeechError("On-device dictation could not start. Type instead.")
+            deliverSpeechError("On-device dictation could not start. Please type instead.")
         }
+    }
+
+    private fun handleSpeechError(error: Int) {
+        val languageMissing = error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE ||
+            error == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED
+        if (languageMissing && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // The offline English (India) pack is not on this phone yet; ask Android to fetch it.
+            // The download is between Android and Google; no audio is sent.
+            try {
+                recognizer?.triggerModelDownload(speechIntent())
+                deliverSpeechError("The offline English speech pack isn't on this phone yet. Android is downloading it — try the mic again in a minute. Type instead for now.")
+            } catch (_: Exception) {
+                deliverSpeechError("The offline English speech pack isn't on this phone. Add it in Settings › System › Languages › On-device speech recognition, or type instead.")
+            }
+            return
+        }
+        deliverSpeechError(
+            when (error) {
+                SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT ->
+                    "Didn't catch that. Tap the mic and speak again, or type instead."
+                SpeechRecognizer.ERROR_AUDIO -> "The microphone isn't available right now. Please type instead."
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Microphone permission is off. Please type instead."
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Dictation is busy. Wait a moment and try again."
+                else -> if (languageMissing) {
+                    "The offline English speech pack isn't on this phone. Please type instead."
+                } else {
+                    "On-device dictation stopped (code $error). Please type instead."
+                }
+            }
+        )
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, results: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, results)
-        if (requestCode == AUDIO_REQUEST) {
+        if (requestCode == AUDIO_REQUEST && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (results.firstOrNull() == PackageManager.PERMISSION_GRANTED) startSpeechRecognition()
-            else deliverSpeechError("Microphone permission was not granted. Type instead.")
+            else deliverSpeechError("Microphone permission was not granted. Please type instead.")
         }
     }
 
     @Deprecated("Deprecated by Android; required for the WebView file chooser callback")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == FILE_REQUEST) {
-            val uris = if (resultCode == RESULT_OK && data?.data != null) arrayOf(data.data!!) else null
-            fileCallback?.onReceiveValue(uris)
-            fileCallback = null
+        when (requestCode) {
+            FILE_REQUEST -> {
+                val uris = if (resultCode == RESULT_OK && data?.data != null) arrayOf(data.data!!) else null
+                fileCallback?.onReceiveValue(uris)
+                fileCallback = null
+            }
+            SAVE_REQUEST -> {
+                val save = pendingSave
+                pendingSave = null
+                val uri = data?.data
+                if (resultCode != RESULT_OK || uri == null || save == null) {
+                    runJs("window.onNativeFileError(${jsString("Export cancelled — nothing was saved.")})")
+                    return
+                }
+                try {
+                    contentResolver.openOutputStream(uri)?.use { it.write(save.content.toByteArray(Charsets.UTF_8)) }
+                        ?: error("no output stream")
+                    runJs("window.onNativeFileSaved(${jsString(save.name)})")
+                } catch (_: Exception) {
+                    runJs("window.onNativeFileError(${jsString("Could not save ${save.name}. Try another location.")})")
+                }
+            }
         }
     }
 
     private fun jsString(value: String) = JSONObject.quote(value)
+
     // Block bodies so these return Unit (web.post returns Boolean), as RecognitionListener.onError requires.
     private fun runJs(script: String) {
         web.post { web.evaluateJavascript(script, null) }
@@ -184,5 +301,11 @@ class MainActivity : Activity() {
     companion object {
         private const val FILE_REQUEST = 81
         private const val AUDIO_REQUEST = 82
+        private const val SAVE_REQUEST = 83
+        private const val SPEECH_LANGUAGE = "en-IN"
+        private const val ASSET_ROOT = "/android_asset"
+        private const val APP_PAGE = "$ASSET_ROOT/www/index.html"
+        // Public site that hosts the pages the web app links to (../privacy/, ../voicetask/, …).
+        private const val SITE_URL = "https://fieldnotes-henna.vercel.app"
     }
 }
