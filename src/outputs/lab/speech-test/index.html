@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10271e">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../../icon.svg">
+<link rel="stylesheet" href="../../styles.css">
+<title>Speech test lab | Fieldnotes</title>
+<style>
+.lab{display:grid;gap:16px}
+.step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
+.step h3{font:700 17px var(--display);margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.step h3 .n{width:26px;height:26px;border-radius:50%;background:var(--lime);color:#203d2e;display:grid;place-items:center;font-size:13px;flex:none}
+.step p{margin:0 0 14px;color:var(--muted);font-size:15px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,input[type=file]{font:15px var(--sans);padding:10px;border:1px solid #d9dfd6;border-radius:8px;background:#fbfcfa;max-width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.rec{background:#b5432c}.btn.rec:hover{background:#963622}
+.meter{height:8px;background:#eef1ec;border-radius:99px;overflow:hidden;margin-top:12px}.meter i{display:block;height:100%;width:0;background:var(--green);transition:width .2s}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.kv div{background:#f6f8f4;border:1px solid #edf0e9;border-radius:10px;padding:10px 12px}
+.kv small{display:block;font:11px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.kv b{font:700 17px var(--display)}
+.status-line{font:13px var(--mono);color:var(--muted);margin-top:10px;min-height:18px;overflow-wrap:anywhere}
+.status-line.err{color:#a3341f}
+.out{background:#f6f8f4;border-left:3px solid var(--lime);padding:12px 14px;border-radius:6px;margin-top:14px;font-size:15px}
+.out .t{font-size:17px;color:var(--ink)}
+.verdict{display:none;margin-top:12px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:12px var(--mono);padding:5px 10px;border-radius:99px;background:#eef1ec}
+.pill.on{background:#dff3c8;color:#2d5420}.pill.off{background:#f6ecd5;color:#7a5a17}
+table.runs{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+table.runs th,table.runs td{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}
+table.runs th{font-weight:600;color:#3e4d42;border-top:0}
+.scroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="brand" href="../../"><span class="brand-mark">f.</span>fieldnotes</a>
+<nav><a href="../../voicetask/">VoiceTask</a><a href="../../privacy/">Privacy</a></nav>
+</div></header>
+<section class="hero"><div class="wrap">
+<div class="crumbs"><a href="../../">Fieldnotes</a> / Lab / Speech test</div>
+<h1>On-device speech test</h1>
+<p>A test bench, not a product. It checks whether a small Whisper model can turn spoken tasks into text on a real phone, fast enough and without a network.</p>
+</div></section>
+<main><div class="wrap lab">
+
+<div class="note"><b>Privacy on this page.</b> The model and its code are downloaded once from Hugging Face and jsDelivr, then kept in this browser. Your recordings are processed in this tab and never uploaded. Results are saved only in this browser until you copy them.</div>
+
+<div class="step">
+<h3><span class="n">1</span>Load the model (while online)</h3>
+<p>Do this once on Wi-Fi. The download is cached, so later loads should be fast and work in airplane mode.</p>
+<div class="row">
+<select id="model" aria-label="Model">
+<option value="Xenova/whisper-tiny">Whisper tiny (smallest)</option>
+<option value="Xenova/whisper-base">Whisper base (larger, more accurate)</option>
+</select>
+<select id="dtype" aria-label="Precision">
+<option value="q8">8-bit (smaller, faster)</option>
+<option value="fp32">Full precision (larger)</option>
+</select>
+<button class="btn" id="load">Load model</button>
+<span class="pill" id="net">checking network…</span>
+</div>
+<div class="meter"><i id="bar"></i></div>
+<div class="status-line" id="load-status"></div>
+<div class="kv" id="load-kv" hidden>
+<div><small>Downloaded</small><b id="kv-size">–</b></div>
+<div><small>Load time</small><b id="kv-load">–</b></div>
+<div><small>Source</small><b id="kv-src">–</b></div>
+<div><small>Threads</small><b id="kv-thr">–</b></div>
+</div>
+</div>
+
+<div class="step">
+<h3><span class="n">2</span>Say a real task</h3>
+<p>Speak the way you would on the job, for example “Call Sharma ji tomorrow about the cement order”. Keep it under 30 seconds.</p>
+<div class="row">
+<select id="lang" aria-label="Language">
+<option value="english">English</option>
+<option value="hindi">Hindi</option>
+<option value="marathi">Marathi</option>
+<option value="">Auto-detect</option>
+</select>
+<button class="btn rec" id="rec" disabled>● Record</button>
+<label class="btn secondary" style="position:relative;overflow:hidden">Or choose an audio file<input type="file" id="file" accept="audio/*" disabled style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>
+</div>
+<div class="status-line" id="run-status">Load the model first.</div>
+<div class="out" id="out" hidden>
+<div class="t" id="out-text"></div>
+<div style="margin-top:8px;font-size:14px;color:var(--muted)" id="out-task"></div>
+<div class="kv">
+<div><small>Audio</small><b id="kv-audio">–</b></div>
+<div><small>Processing</small><b id="kv-proc">–</b></div>
+<div><small>Speed vs real time</small><b id="kv-rtf">–</b></div>
+<div><small>Network</small><b id="kv-online">–</b></div>
+</div>
+</div>
+<div class="verdict" id="verdict">
+<p style="margin:0 0 8px;font-size:15px"><b>Did it capture what you meant?</b></p>
+<div class="row"><button class="btn secondary" data-v="correct">Correct</button><button class="btn secondary" data-v="partly">Partly</button><button class="btn secondary" data-v="wrong">Wrong</button></div>
+</div>
+</div>
+
+<div class="step">
+<h3><span class="n">3</span>Repeat in airplane mode</h3>
+<p>Turn on airplane mode, reload this page, tap <b>Load model</b> again, then record two or three more tasks. If it loads and transcribes, offline works on this phone.</p>
+</div>
+
+<div class="step">
+<h3><span class="n">4</span>Results on this phone</h3>
+<p>Each run is saved in this browser. Copy the evidence note and send it back when you are done.</p>
+<div class="scroll"><table class="runs"><thead><tr><th>When</th><th>Model</th><th>Lang</th><th>Audio</th><th>Processing</th><th>Offline</th><th>Result</th></tr></thead><tbody id="runs"><tr><td colspan="7" style="color:var(--muted)">No runs yet.</td></tr></tbody></table></div>
+<div class="row" style="margin-top:14px">
+<label style="font-size:14px;display:flex;gap:8px;align-items:center"><input type="checkbox" id="with-text"> Include what was said (check for names first)</label>
+</div>
+<div class="row" style="margin-top:10px">
+<button class="btn" id="copy">Copy evidence note</button>
+<button class="btn secondary" id="clear">Clear results</button>
+</div>
+<div class="status-line" id="copy-status"></div>
+</div>
+
+</div></main>
+<footer><div class="wrap"><span>Fieldnotes lab. For testing only.</span><span><a href="../../privacy/">Privacy</a></span></div></footer>
+
+<script type="module">
+const LIB='https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.6/dist/transformers.min.js';
+const $=id=>document.getElementById(id);
+const KEY='fieldnotes_lab_runs';
+const state={asr:null,model:'',dtype:'',loadMs:0,bytes:0,fromCache:null,batteryStart:null,last:null};
+const fmtMB=b=>b?(b/1048576).toFixed(1)+' MB':'–';
+const fmtS=ms=>(ms/1000).toFixed(1)+' s';
+function setStatus(id,msg,err){const el=$(id);el.textContent=msg;el.className='status-line'+(err?' err':'')}
+function runs(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch{return []}}
+function saveRuns(r){try{localStorage.setItem(KEY,JSON.stringify(r))}catch{}}
+
+function net(){const on=navigator.onLine;$('net').textContent=on?'Online':'Offline (airplane mode)';$('net').className='pill '+(on?'on':'off')}
+addEventListener('online',net);addEventListener('offline',net);net();
+
+async function battery(){try{if(navigator.getBattery){const b=await navigator.getBattery();return Math.round(b.level*100)}}catch{}return null}
+
+$('load').onclick=async()=>{
+  const model=$('model').value,dtype=$('dtype').value;
+  $('load').disabled=true;$('bar').style.width='0';$('load-kv').hidden=true;
+  setStatus('load-status','Loading library…');
+  state.batteryStart=state.batteryStart??await battery();
+  let mod;
+  try{mod=await import(LIB)}catch(e){setStatus('load-status','Could not load the speech library. If you are offline, open this page once while online first. ('+e.message+')',true);$('load').disabled=false;return}
+  const {pipeline,env}=mod;env.allowLocalModels=false;env.useBrowserCache=true;
+  const files={};const t0=performance.now();let sawNetwork=false;
+  const progress=p=>{
+    if(p.status==='progress'&&p.total){files[p.file]={loaded:p.loaded,total:p.total};const tot=Object.values(files).reduce((s,f)=>s+f.total,0),got=Object.values(files).reduce((s,f)=>s+f.loaded,0);$('bar').style.width=Math.min(100,got/tot*100).toFixed(0)+'%';setStatus('load-status','Downloading '+fmtMB(got)+' of '+fmtMB(tot)+'…');if(performance.now()-t0>1500)sawNetwork=true}
+    else if(p.status==='initiate'){setStatus('load-status','Fetching '+p.file+'…')}
+  };
+  try{
+    state.asr=await pipeline('automatic-speech-recognition',model,{dtype,device:'wasm',progress_callback:progress});
+  }catch(e){setStatus('load-status','Model failed to load: '+e.message,true);$('load').disabled=false;return}
+  state.loadMs=performance.now()-t0;state.model=model;state.dtype=dtype;
+  state.bytes=Object.values(files).reduce((s,f)=>s+f.total,0);
+  state.fromCache=!navigator.onLine||(!sawNetwork&&state.loadMs<8000);
+  $('bar').style.width='100%';$('load-kv').hidden=false;
+  $('kv-size').textContent=fmtMB(state.bytes);$('kv-load').textContent=fmtS(state.loadMs);
+  $('kv-src').textContent=navigator.onLine?(state.fromCache?'Cache (likely)':'Network'):'Cache (offline)';
+  $('kv-thr').textContent=self.crossOriginIsolated?'Multi':'Single';
+  setStatus('load-status','Ready: '+model.split('/')[1]+' ('+dtype+').');
+  $('rec').disabled=false;$('file').disabled=false;$('load').disabled=false;
+  setStatus('run-status','Ready. Tap Record and say a task.');
+};
+
+async function toMono16k(arrayBuf){
+  const AC=window.AudioContext||window.webkitAudioContext;const ac=new AC();
+  const decoded=await ac.decodeAudioData(arrayBuf);ac.close&&ac.close();
+  const len=Math.max(1,Math.ceil(decoded.duration*16000));
+  const oac=new OfflineAudioContext(1,len,16000);const src=oac.createBufferSource();src.buffer=decoded;src.connect(oac.destination);src.start();
+  const r=await oac.startRendering();return {audio:r.getChannelData(0),seconds:decoded.duration};
+}
+
+let recorder=null,chunks=[],stopTimer=null;
+$('rec').onclick=async()=>{
+  if(recorder&&recorder.state==='recording'){recorder.stop();return}
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){setStatus('run-status','Microphone not available: '+e.message,true);return}
+  chunks=[];recorder=new MediaRecorder(stream);
+  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
+  recorder.onstop=async()=>{clearTimeout(stopTimer);stream.getTracks().forEach(t=>t.stop());$('rec').textContent='● Record';const blob=new Blob(chunks,{type:recorder.mimeType});await transcribe(await blob.arrayBuffer())};
+  recorder.start();$('rec').textContent='■ Stop';setStatus('run-status','Recording… tap Stop when done (max 30 s).');
+  stopTimer=setTimeout(()=>recorder.state==='recording'&&recorder.stop(),30000);
+};
+$('file').onchange=async e=>{const f=e.target.files[0];if(f)await transcribe(await f.arrayBuffer());e.target.value=''};
+
+async function transcribe(buf){
+  if(!state.asr)return;
+  $('rec').disabled=true;$('verdict').style.display='none';
+  setStatus('run-status','Transcribing on this device…');
+  let audio,seconds;try{({audio,seconds}=await toMono16k(buf))}catch(e){setStatus('run-status','Could not read that audio: '+e.message,true);$('rec').disabled=false;return}
+  const lang=$('lang').value;const opts={task:'transcribe',chunk_length_s:30,stride_length_s:5};if(lang)opts.language=lang;
+  const t0=performance.now();let out;
+  try{out=await state.asr(audio,opts)}catch(e){setStatus('run-status','Transcription failed: '+e.message,true);$('rec').disabled=false;return}
+  const ms=performance.now()-t0,text=(out&&out.text||'').trim();
+  const g=dateGuess(text);
+  state.last={when:new Date().toISOString(),model:state.model.split('/')[1],dtype:state.dtype,lang:lang||'auto',audioS:+seconds.toFixed(1),procS:+(ms/1000).toFixed(1),rtf:+(ms/1000/seconds).toFixed(2),offline:!navigator.onLine,text,date:g?g.date:'',verdict:''};
+  $('out').hidden=false;$('out-text').textContent=text||'(nothing recognised)';
+  $('out-task').textContent=g?'VoiceTask would suggest a due date of '+g.date+' (from “'+g.phrase+'”).':'No due date phrase found.';
+  $('kv-audio').textContent=seconds.toFixed(1)+' s';$('kv-proc').textContent=fmtS(ms);
+  $('kv-rtf').textContent=(ms/1000/seconds).toFixed(2)+'× '+(ms/1000<=seconds?'(faster)':'(slower)');
+  $('kv-online').textContent=navigator.onLine?'Online':'Offline';
+  $('verdict').style.display='block';setStatus('run-status','Done. Mark the result below.');$('rec').disabled=false;
+}
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{if(!state.last)return;state.last.verdict=b.dataset.v;const r=runs();r.push(state.last);saveRuns(r);state.last=null;$('verdict').style.display='none';setStatus('run-status','Saved. Record another task.');drawRuns()});
+
+function drawRuns(){const r=runs();$('runs').innerHTML=r.length?r.map(x=>`<tr><td>${new Date(x.when).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</td><td>${x.model} ${x.dtype}</td><td>${x.lang}</td><td>${x.audioS}s</td><td>${x.procS}s</td><td>${x.offline?'Yes':'No'}</td><td>${x.verdict}</td></tr>`).join(''):'<tr><td colspan="7" style="color:var(--muted)">No runs yet.</td></tr>'}
+drawRuns();
+
+$('copy').onclick=async()=>{
+  const r=runs(),withText=$('with-text').checked,bEnd=await battery();
+  const ok=r.filter(x=>x.verdict==='correct').length,part=r.filter(x=>x.verdict==='partly').length;
+  const avg=k=>r.length?(r.reduce((s,x)=>s+x[k],0)/r.length).toFixed(2):'-';
+  const lines=['Fieldnotes speech test: evidence note','Date: '+new Date().toLocaleString('en-IN'),'Browser: '+navigator.userAgent,'CPU cores: '+(navigator.hardwareConcurrency||'?')+' · Device memory: '+(navigator.deviceMemory?navigator.deviceMemory+' GB':'?')+' · Multi-threaded: '+(self.crossOriginIsolated?'yes':'no'),
+    'Model: '+(state.model||'-')+' ('+(state.dtype||'-')+') · Download: '+fmtMB(state.bytes)+' · Last load: '+(state.loadMs?fmtS(state.loadMs):'-'),
+    'Battery: '+(state.batteryStart!=null?state.batteryStart+'%':'?')+' → '+(bEnd!=null?bEnd+'%':'?'),
+    'Runs: '+r.length+' · Correct: '+ok+' · Partly: '+part+' · Wrong: '+(r.length-ok-part)+' · Offline runs: '+r.filter(x=>x.offline).length,
+    'Average audio: '+avg('audioS')+' s · Average processing: '+avg('procS')+' s · Average speed ratio: '+avg('rtf'),'',
+    ...r.map((x,i)=>`${i+1}. ${x.model}/${x.dtype} ${x.lang} · ${x.audioS}s audio · ${x.procS}s · ${x.offline?'offline':'online'} · ${x.verdict}${x.date?' · date '+x.date:''}${withText?' · "'+x.text+'"':''}`)];
+  const text=lines.join('\n');
+  try{if(navigator.share)await navigator.share({text});else{await navigator.clipboard.writeText(text);setStatus('copy-status','Copied. Paste it into WhatsApp or email.')}}catch{try{await navigator.clipboard.writeText(text);setStatus('copy-status','Copied.')}catch{setStatus('copy-status','Could not copy on this browser.',true)}}
+};
+$('clear').onclick=()=>{if($('clear').dataset.armed!=='1'){$('clear').dataset.armed='1';$('clear').textContent='Tap again to clear';return}saveRuns([]);$('clear').dataset.armed='';$('clear').textContent='Clear results';drawRuns()};
+
+// Same date rules as the VoiceTask preview.
+function iso(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+const WD=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+function dateGuess(s){const x=' '+s.toLowerCase().replace(/[^a-z\s]/g,' ')+' ',n=new Date(),d=new Date(n.getFullYear(),n.getMonth(),n.getDate());const hit=re=>{const m=x.match(re);return m?m[0].trim():null};let p;
+if((p=hit(/\sday after tomorrow\s/))){d.setDate(d.getDate()+2);return {date:iso(d),phrase:p}}
+if((p=hit(/\stomorrow\s/))){d.setDate(d.getDate()+1);return {date:iso(d),phrase:p}}
+if((p=hit(/\s(today|tonight|this evening)\s/)))return {date:iso(d),phrase:p};
+if((p=hit(/\snext week\s/))){d.setDate(d.getDate()+7);return {date:iso(d),phrase:p}}
+for(let i=0;i<7;i++){if((p=hit(new RegExp('\\s((next|this|by|on)\\s)?'+WD[i]+'\\s')))){d.setDate(d.getDate()+(((i-d.getDay()+7)%7)||7));return {date:iso(d),phrase:p}}}
+return null}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('../../sw.js').catch(()=>{});
+</script>
+</body>
+</html>
