@@ -50,10 +50,14 @@ jobs:
           done
           exit 1
 
+      - name: Read app version
+        id: version
+        run: echo "name=$(grep -oP 'versionName = "\K[^"]+' android/app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
-          name: fieldnotes-android-v0.3.0-debug
+          name: fieldnotes-android-v${{ steps.version.outputs.name }}-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
