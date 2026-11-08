@@ -158,12 +158,22 @@ class MainActivity : Activity() {
     }
 
     private fun jsString(value: String) = JSONObject.quote(value)
-    private fun deliverOcrResult(value: String) = web.post { web.evaluateJavascript("window.onNativeOcrResult(${jsString(value)})", null) }
-    private fun deliverOcrError(value: String) = web.post { web.evaluateJavascript("window.onNativeOcrError(${jsString(value)})", null) }
-    private fun deliverSpeechResult(target: String, value: String) = web.post {
-        web.evaluateJavascript("window.onNativeSpeechResult(${jsString(target)},${jsString(value)})", null)
+    // Block bodies so these return Unit (web.post returns Boolean), as RecognitionListener.onError requires.
+    private fun runJs(script: String) {
+        web.post { web.evaluateJavascript(script, null) }
     }
-    private fun deliverSpeechError(value: String) = web.post { web.evaluateJavascript("window.onNativeSpeechError(${jsString(value)})", null) }
+    private fun deliverOcrResult(value: String) {
+        runJs("window.onNativeOcrResult(${jsString(value)})")
+    }
+    private fun deliverOcrError(value: String) {
+        runJs("window.onNativeOcrError(${jsString(value)})")
+    }
+    private fun deliverSpeechResult(target: String, value: String) {
+        runJs("window.onNativeSpeechResult(${jsString(target)},${jsString(value)})")
+    }
+    private fun deliverSpeechError(value: String) {
+        runJs("window.onNativeSpeechError(${jsString(value)})")
+    }
 
     override fun onDestroy() {
         recognizer?.destroy()
