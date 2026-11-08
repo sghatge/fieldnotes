@@ -1,0 +1,61 @@
+name: Android debug APK
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "src/outputs/app/**"
+      - ".github/workflows/android-debug-apk.yml"
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "src/outputs/app/**"
+      - ".github/workflows/android-debug-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and attach debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android 35 SDK packages
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Build debug APK
+        working-directory: android
+                run: |
+          for attempt in 1 2 3 4; do
+            ./gradlew --no-daemon assembleDebug && exit 0
+            if [ "$attempt" -lt 4 ]; then
+              echo "Gradle build failed on attempt $attempt; retrying in 15 seconds."
+              sleep 15
+            fi
+          done
+          exit 1
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: fieldnotes-android-v0.3.0-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+
