@@ -15,6 +15,7 @@ import android.graphics.Color
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -83,7 +84,21 @@ class MainActivity : Activity() {
         }
         keepClearOfSystemBars(container)
         setContentView(container)
+        useDarkSystemBarIcons()
         web.loadUrl("file://$APP_PAGE")
+    }
+
+    /** The app background is light, so the clock, battery and nav icons must be dark to be visible. */
+    private fun useDarkSystemBarIcons() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val light = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
+                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+            window.insetsController?.setSystemBarsAppearance(light, light)
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
+                (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR else 0)
+        }
     }
 
     /**

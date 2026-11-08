@@ -46,11 +46,32 @@ android {
         applicationId = "com.fieldnotes.privatework"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
     }
 
     sourceSets["main"].assets.srcDir(generatedWebAssets)
+
+    // Release signing reads the key from environment variables only, so no secret is ever
+    // committed. See android/RELEASE.md. Without them, release builds stay unsigned and
+    // cannot be installed, which is the safe failure.
+    val releaseKeystore = System.getenv("FIELDNOTES_KEYSTORE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("FIELDNOTES_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("FIELDNOTES_KEY_ALIAS") ?: "fieldnotes"
+                keyPassword = System.getenv("FIELDNOTES_KEY_PASSWORD")
+                    ?: System.getenv("FIELDNOTES_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") {
+            if (releaseKeystore != null) signingConfig = signingConfigs.getByName("release")
+        }
+    }
 
     // Java and Kotlin must target the same JVM version, or compileDebugKotlin fails.
     compileOptions {

@@ -117,11 +117,13 @@
       .filter((amount) => Number.isFinite(amount) && amount > 0);
     if (amounts.length && !el('ex-amount').value) el('ex-amount').value = Math.max(...amounts);
 
+    // OCR often joins words on receipts ("MEDICALSTORE"), so keywords only need to start a
+    // word. Short, ambiguous ones (uber, ola) still need a full word match.
     const lower = text.toLowerCase();
-    const category = lower.match(/\b(petrol|diesel|fuel|uber|ola|railway|airlines?)\b/) ? 'Travel' :
-      lower.match(/\b(cafe|restaurant|foods?|bakery|sweets?)\b/) ? 'Food & refreshments' :
-      lower.match(/\b(electricity|internet|broadband|mobile recharge|telephone)\b/) ? 'Utilities' :
-      lower.match(/\b(pharmacy|medical|clinic|hospital|chemist)\b/) ? 'Medical' : null;
+    const category = lower.match(/\b(petrol|diesel|fuel|railway|airline)|\b(uber|ola)\b/) ? 'Travel' :
+      lower.match(/\b(cafe|restaurant|food|bakery|sweet)/) ? 'Food & refreshments' :
+      lower.match(/\b(electricity|internet|broadband|mobile recharge|telephone)/) ? 'Utilities' :
+      lower.match(/\b(pharmacy|medical|clinic|hospital|chemist)/) ? 'Medical' : null;
     if (category && [...el('ex-category').options].some((o) => o.value === category)) el('ex-category').value = category;
 
     // The date field is pre-filled with today, so a date found on the receipt replaces it.
