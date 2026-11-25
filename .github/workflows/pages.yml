@@ -1,0 +1,89 @@
+name: Fieldnotes — GitHub Pages
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/outputs/**"
+      - "tools/**"
+      - ".github/workflows/pages.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/outputs/**"
+      - "tools/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate static site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+      - name: Check JavaScript syntax
+        run: node --check src/outputs/app/app.js && node --check src/outputs/sw.js
+      - name: Validate required pages and local links
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          root = Path("src/outputs")
+          required = [
+              "index.html", "app/index.html", "app/app.js", "styles.css",
+              "privacy/index.html", "manifest.webmanifest", "sw.js",
+              "voicetask/index.html", "callrecap/index.html",
+              "expenselens/index.html", "fieldaudit/index.html",
+              "paperbrief/index.html",
+          ]
+          missing = [p for p in required if not (root / p).is_file()]
+          if missing:
+              raise SystemExit("Missing required site files: " + ", ".join(missing))
+          for html in root.rglob("*.html"):
+              source = html.read_text(encoding="utf-8")
+              for target in re.findall(r'(?:href|src)="([^"]+)"', source):
+                  if target.startswith(("http://", "https://", "mailto:", "tel:", "#", "data:")):
+                      continue
+                  path = target.split("#", 1)[0].split("?", 1)[0]
+                  if not path:
+                      continue
+                  resolved = (html.parent / path).resolve()
+                  if resolved.is_dir():
+                      resolved = resolved / "index.html"
+                  if not resolved.is_file():
+                      raise SystemExit(f"Broken local reference in {html}: {target}")
+          print(f"Validated {len(required)} required files and local references.")
+          PY
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: src/outputs
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v4
