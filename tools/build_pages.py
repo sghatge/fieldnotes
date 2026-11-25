@@ -139,7 +139,7 @@ def page(title, desc, body, depth):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10271e">
-<meta name="robots" content="noindex">
+<meta name="robots" content="index,follow">
 <meta name="description" content="{e(desc)}">
 <link rel="icon" href="{up}icon.svg">
 <link rel="stylesheet" href="{up}styles.css">
@@ -239,7 +239,7 @@ def privacy():
 <table class="flow"><thead><tr><th>Situation</th><th>What leaves your device</th></tr></thead><tbody>
 <tr><td>You tap a microphone button</td><td>Your browser’s speech service receives the audio to turn it into text. In Chrome and Edge that is Google or Microsoft, under their privacy terms. Type instead if nothing should leave your device.</td></tr>
 <tr><td>You tap Share or Export</td><td>Only what you chose, sent to the app or file you picked.</td></tr>
-<tr><td>Loading the website</td><td>Our host, Vercel, receives standard request details (such as your IP address and browser) to deliver the pages.</td></tr>
+<tr><td>Loading the website</td><td>Our hosting provider and its delivery network may receive standard request details (such as your IP address and browser) to deliver the pages.</td></tr>
 <tr><td>Speech test lab page</td><td>Downloads a speech model from Hugging Face and code from jsDelivr once, then runs on your device. Your audio is not uploaded. This page is only for testing.</td></tr>
 </tbody></table></section>
 <section><h2>Delete your PuneStack Tools data</h2>
