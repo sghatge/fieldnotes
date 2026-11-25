@@ -9,7 +9,7 @@ self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promis
 self.addEventListener('fetch',e=>{
   const r=e.request;if(r.method!=='GET')return;const u=new URL(r.url);
   if(u.origin===location.origin&&u.pathname.startsWith(BASE.pathname)){
-    if(r.mode==='navigate'){e.respondWith(fetch(r).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c));return res}).catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||caches.match(new URL('app/',BASE).pathname)))));return}
+    if(r.mode==='navigate'){e.respondWith(fetch(r).then(res=>{const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c));return res}).catch(()=>caches.match(r,{ignoreSearch:true}).then(m=>m||caches.match(new URL('app/',BASE).pathname))));return}
     e.respondWith(caches.match(r).then(m=>m||fetch(r).then(res=>{if(res.ok){const c=res.clone();caches.open(CACHE).then(x=>x.put(r,c))}return res})));return}
   if(u.hostname==='cdn.jsdelivr.net'){e.respondWith(caches.open(CDN_CACHE).then(c=>c.match(r).then(m=>m||fetch(r).then(res=>{if(res.ok)c.put(r,res.clone());return res}))))}
 });
