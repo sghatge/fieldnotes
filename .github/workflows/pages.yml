@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v5
+      - name: Check JavaScript syntax
+        run: node --check src/outputs/app/app.js && node --check src/outputs/sw.js
       - name: Validate required pages and local links
         run: |
           python3 - <<'PY'
