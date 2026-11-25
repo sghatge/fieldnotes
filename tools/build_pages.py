@@ -41,11 +41,11 @@ PRODUCTS = [
         "slug": "callrecap", "app": "call", "name": "CallRecap", "status": ("preview", "Early preview"),
         "line": "Every client call becomes a clean follow-up note.",
         "who": "Brokers and sales people who make many short client calls from the car or the shop floor.",
-        "problem": "After a call you remember the mood but not the details. Follow-ups slip, and CRM entries never get written.",
+        "problem": "After a call you remember the mood but not the details. Follow-ups slip, and notes never get written up.",
         "works": [
             "Type or dictate notes right after the call",
             "A simple recap pulls out a summary, any objection and the next step using keyword rules",
-            "Copy the recap for your CRM or WhatsApp",
+            "Copy the recap to WhatsApp, email or your CRM",
         ],
         "missing": [
             "It does not record calls. Planned as a voice memo after the call, not call recording",
